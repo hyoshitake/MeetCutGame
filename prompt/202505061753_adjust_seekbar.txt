@@ -1,0 +1,2 @@
+- `public/index.html`の`seek-bar-container`を画面の中央に表示してください
+- フレームレートによって`seek-bar`の速度が変わっています。requestAnimationFrameではなくsetIntervalを利用してください
