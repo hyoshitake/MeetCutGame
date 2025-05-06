@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>牛肉ぴったんこチャレンジ</title>
+    <!-- Font Awesome を追加 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body {
             font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
@@ -55,6 +57,30 @@
             margin: 20px auto 10px; /* 上部に余白を追加し、中央揃えとマージンを一行にまとめる */
             min-width: 50%; /* 横幅をキャンバスに合わせる */
         }
+        #cut-button {
+            background-color: #8B3A3A; /* 赤み肉の色味 */
+            color: white;
+            font-size: 24px;
+            width: 60px;
+            height: 60px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 20px; /* キャンバスとの間隔 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #cut-button:hover {
+            background-color: #A52A2A; /* ホバー時は少し明るい赤み色 */
+        }
+
+        #cut-button:active {
+            transform: scale(0.95);
+        }
     </style>
 </head>
 <body>
@@ -67,6 +93,8 @@
             <div id="seek-bar"></div>
         </div>
         <canvas id="meat-canvas"></canvas>
+        <!-- ハサミボタンを追加 -->
+        <button id="cut-button"><i class="fas fa-scissors"></i></button>
     </div>
 
     <script>
@@ -78,13 +106,102 @@
             const ctx = canvas.getContext('2d');
             const seekBar = document.getElementById('seek-bar');
             const seekBarContainer = document.getElementById('seek-bar-container');
+            const cutButton = document.getElementById('cut-button');
             let seekDirection = 1; // 1: 右方向, -1: 左方向
             let intervalId; // setIntervalのID
             let lastTimestamp = 0; // 前回の更新時間
             let seekPosition = 0; // シークバーの現在位置
+            let isCutting = false; // 切っている最中かどうか
+            let baselineY; // 肉の下線のY座標
 
             // シークバーの総移動時間（ミリ秒）
             const TOTAL_DURATION = 1500; // 1.5秒
+
+            // 切る動作の時間（ミリ秒）
+            const CUT_DURATION = 500; // 0.5秒
+            let cutStartTime = 0; // 切り始めた時間
+            let cutStartY = 0; // 切り始めたY座標
+
+            // 肉を切る関数
+            function cutMeat() {
+                if (isCutting) {
+                    // 経過時間の計算（切り始めてからの時間）
+                    const elapsed = Date.now() - cutStartTime;
+                    const progress = Math.min(1, elapsed / CUT_DURATION);
+
+                    // シークバーを下に移動させる
+                    const newY = cutStartY + (baselineY - cutStartY) * progress;
+                    seekBar.style.top = newY + 'px';
+
+                    // 切り終わったら
+                    if (progress === 1) {
+                        isCutting = false;
+
+                        // 肉を二つに分ける描画を行う
+                        drawCutMeat();
+
+                        // 少し待ってから結果表示（今回は単純に「成功」と表示）
+                        setTimeout(() => {
+                            alert('お肉をぴったんこ切りました！挑戦成功！');
+                            // ゲームを初期状態に戻す
+                            resetGame();
+                        }, 500);
+
+                        return;
+                    }
+
+                    // アニメーションを続ける
+                    requestAnimationFrame(cutMeat);
+                }
+            }
+
+            // 切った肉を描画する関数
+            function drawCutMeat() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // 肉の色
+                ctx.fillStyle = '#FF6347';
+                ctx.strokeStyle = '#8B3A3A';
+                ctx.lineWidth = 2;
+
+                // 切れ目の位置（シークバーのX座標）
+                const cutX = seekPosition;
+
+                // 左側の肉片
+                ctx.beginPath();
+                ctx.moveTo(0, baselineY);
+                ctx.lineTo(cutX, baselineY);
+                ctx.lineTo(cutX, baselineY + 10); // 少し下に下げる
+                ctx.lineTo(0, baselineY + 5); // 少し下に下げる
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // 右側の肉片
+                ctx.beginPath();
+                ctx.moveTo(cutX, baselineY);
+                ctx.lineTo(canvas.width, baselineY);
+                ctx.lineTo(canvas.width, baselineY + 5); // 少し下に下げる
+                ctx.lineTo(cutX, baselineY + 10); // 少し下に下げる
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            // ゲームをリセットする関数
+            function resetGame() {
+                // シークバーを元の位置に戻す
+                seekBar.style.top = '10px';
+                seekPosition = 0;
+                lastTimestamp = 0;
+                seekDirection = 1;
+
+                // 肉を再描画
+                drawMeat();
+
+                // シークバーのアニメーションを再開
+                requestAnimationFrame(updateAnimation);
+            }
 
             // キャンバスのサイズ設定
             function resizeCanvas() {
@@ -166,7 +283,7 @@
                 ctx.lineWidth = 2;
 
                 // 下線のY座標（キャンバスの下から30%の位置）
-                const baselineY = canvas.height * 0.7;
+                baselineY = canvas.height * 0.7;
 
                 // パスの開始
                 ctx.beginPath();
@@ -211,6 +328,23 @@
                 ctx.fill();
                 ctx.stroke();
             }
+
+            // ハサミボタンのクリックイベント
+            cutButton.addEventListener('click', function() {
+                if (!isCutting && intervalId) {
+                    // アニメーションの停止
+                    clearTimeout(intervalId);
+                    intervalId = null;
+
+                    // 切る動作の開始
+                    isCutting = true;
+                    cutStartTime = Date.now();
+                    cutStartY = 10; // シークバーの初期Y座標
+
+                    // 切る動作のアニメーション開始
+                    requestAnimationFrame(cutMeat);
+                }
+            });
 
             // スタートボタンのクリックイベント
             startButton.addEventListener('click', function() {
