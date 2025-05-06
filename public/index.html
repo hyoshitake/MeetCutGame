@@ -84,7 +84,13 @@
         }
 
         #cut-button:active {
-            transform: scale(0.95);
+            animation: flash 0.3s;
+        }
+
+        @keyframes flash {
+            0% { background-color: #8B3A3A; }
+            50% { background-color: #ff6b6b; }
+            100% { background-color: #8B3A3A; }
         }
     </style>
 </head>
@@ -172,25 +178,60 @@
                 // 切れ目の位置（シークバーのX座標）
                 const cutX = seekPosition;
 
+                // 分割後の肉片を少し離す
+                const gap = 10; // 隙間のピクセル数
+                const leftMeatEndX = cutX - gap/2;
+                const rightMeatStartX = cutX + gap/2;
+
+                // 肉の高さを保持する（つぶれないように）
+                // オリジナルの肉の形状から高さを取得
+                const meatHeight = canvas.height * 0.25; // 肉の最大高さの目安
+
                 // 左側の肉片
                 ctx.beginPath();
                 ctx.moveTo(0, baselineY);
-                ctx.lineTo(cutX, baselineY);
-                ctx.lineTo(cutX, baselineY + 10); // 少し下に下げる
-                ctx.lineTo(0, baselineY + 5); // 少し下に下げる
+                ctx.lineTo(leftMeatEndX, baselineY);
+                // 上部のランダムな曲線
+                const leftMeatTopY = baselineY - Math.random() * meatHeight;
+                ctx.lineTo(leftMeatEndX, leftMeatTopY);
+                ctx.lineTo(0, baselineY - Math.random() * meatHeight);
                 ctx.closePath();
                 ctx.fill();
                 ctx.stroke();
 
                 // 右側の肉片
                 ctx.beginPath();
-                ctx.moveTo(cutX, baselineY);
+                ctx.moveTo(rightMeatStartX, baselineY);
                 ctx.lineTo(canvas.width, baselineY);
-                ctx.lineTo(canvas.width, baselineY + 5); // 少し下に下げる
-                ctx.lineTo(cutX, baselineY + 10); // 少し下に下げる
+                // 上部のランダムな曲線
+                const rightMeatTopY = baselineY - Math.random() * meatHeight;
+                ctx.lineTo(canvas.width, baselineY - Math.random() * meatHeight);
+                ctx.lineTo(rightMeatStartX, rightMeatTopY);
                 ctx.closePath();
                 ctx.fill();
                 ctx.stroke();
+
+                // 肉の割合を計算
+                const leftRatio = leftMeatEndX / canvas.width;
+                const rightRatio = (canvas.width - rightMeatStartX) / canvas.width;
+
+                // 小さい方の割合を見つける
+                const smallerRatio = Math.min(leftRatio, rightRatio);
+
+                // 1kgのグラム数（1000g）に掛け算して、グラム数を計算
+                const smallerGrams = Math.round(smallerRatio * 1000 * 10) / 10;
+
+                // 結果を表示
+                ctx.font = '24px sans-serif';
+                ctx.fillStyle = '#333';
+                ctx.textAlign = 'center';
+
+                // 小さい方のグラム数を表示
+                ctx.fillText(`小さい方: ${smallerGrams.toFixed(1)}g`, canvas.width / 2, baselineY - meatHeight - 30);
+
+                // 左右の割合も表示
+                ctx.font = '16px sans-serif';
+                ctx.fillText(`左: ${(leftRatio * 100).toFixed(1)}%  右: ${(rightRatio * 100).toFixed(1)}%`, canvas.width / 2, baselineY - meatHeight - 10);
             }
 
             // ゲームをリセットする関数
