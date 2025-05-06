@@ -53,9 +53,10 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
         canvasRef.current.width = width;
         canvasRef.current.height = height;
 
-        // シークバーコンテナの幅をキャンバスに合わせる
+        // シークバーコンテナの幅と高さを明示的に設定
         if (seekBarRef.current) {
           seekBarRef.current.style.width = `${width}px`;
+          seekBarRef.current.style.height = '48px'; // 12の高さを明示的に設定 (h-12相当)
         }
 
         // プレイ中なら肉を再描画
@@ -340,13 +341,20 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
         <div className="relative" ref={gameAreaRef}>
           {/* シークバーコンテナ */}
           <div
-            className="relative h-12 bg-gray-200 rounded-md mx-auto mb-4 overflow-hidden"
+            className="relative bg-gray-200 rounded-md mx-auto mb-4 overflow-hidden"
+            style={{ height: '48px', minHeight: '48px' }}
             ref={seekBarRef}
           >
-            {/* シークバー */}
+            {/* シークバー - 灰色の丸にスタイル変更 */}
             <div
-              className="absolute top-0 h-full w-4 bg-gray-500 rounded-full transform -translate-x-1/2"
-              style={{ left: `${seekPosition}%` }}
+              className="absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2"
+              style={{
+                left: `${seekPosition}%`,
+                width: '10px',
+                height: '10px',
+                backgroundColor: '#808080',
+                borderRadius: '50%'
+              }}
             ></div>
           </div>
 
@@ -378,11 +386,21 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
           />
 
           {/* シークバー（結果表示用） */}
-          <div className="relative h-12 bg-red-100 rounded-md mx-auto mb-8 overflow-hidden" ref={seekBarRef}>
-            {/* 現在位置マーカー */}
+          <div
+            className="relative bg-red-100 rounded-md mx-auto mb-8 overflow-hidden"
+            style={{ height: '48px', minHeight: '48px' }}
+            ref={seekBarRef}
+          >
+            {/* 現在位置マーカー - 赤い丸 */}
             <div
-              className="absolute top-0 h-full w-2 bg-red-600"
-              style={{ left: `${seekPosition}%` }}
+              className="absolute top-1/2 transform -translate-y-1/2 -translate-x-1/2"
+              style={{
+                left: `${seekPosition}%`,
+                width: '10px',
+                height: '10px',
+                backgroundColor: '#ff4136',
+                borderRadius: '50%'
+              }}
             ></div>
 
             {/* カットライン */}

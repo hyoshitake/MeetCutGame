@@ -1,0 +1,7 @@
+- seekBarが表示されません
+  - シークバーコンテナとシークバーのhegihtが0pxになっています
+  - シークバーは灰色の丸です
+    - width: 10px;
+    - height: 10px;
+    - background-color: #808080; /* 灰色 */
+    - border-radius: 50%;
