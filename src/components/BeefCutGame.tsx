@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, memo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 type GameState = 'ready' | 'playing' | 'result';
 
@@ -7,61 +7,44 @@ interface GameProps {
   onSaveScore: (score: number) => Promise<void>;
 }
 
-// シーカーバーをメモ化してリフレッシュを最適化
-const MemoizedSeekbar = memo(({ currentPosition, cutPosition, gameState, seekbarRef }: {
-  currentPosition: number;
-  cutPosition: number;
-  gameState: GameState;
-  seekbarRef: React.RefObject<HTMLDivElement>;
-}) => (
-  <div className="relative w-full h-12 bg-red-100 rounded-md my-8 overflow-hidden" ref={seekbarRef}>
-    {/* 現在位置マーカー */}
-    <div
-      className="absolute top-0 h-full w-2 bg-red-600"
-      style={{ left: `${currentPosition}%` }}
-    ></div>
-
-    {/* カットライン（結果表示時のみ） */}
-    {gameState === 'result' && (
-      <div
-        className="absolute top-0 h-full w-0.5 bg-black"
-        style={{ left: `${cutPosition}%` }}
-      ></div>
-    )}
-
-    {/* 理想的な50%ライン（結果表示時のみ） */}
-    {gameState === 'result' && (
-      <div
-        className="absolute top-0 h-full w-0.5 bg-green-500 opacity-70"
-        style={{ left: `50%` }}
-      ></div>
-    )}
-  </div>
-));
-
-// 表示名を設定（デバッグ用）
-MemoizedSeekbar.displayName = 'MemoizedSeekbar';
-
 export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
+  // ゲーム状態の管理
   const [gameState, setGameState] = useState<GameState>('ready');
-  const [meatLength, setMeatLength] = useState(300); // 牛肉の初期サイズ
-  const [currentPosition, setCurrentPosition] = useState(0);
+
+  // シークバーの位置と方向
+  const [seekPosition, setSeekPosition] = useState(0);
+  const [seekDirection, setSeekDirection] = useState(1); // 1: 右, -1: 左
+
+  // 切った位置と得点
   const [cutPosition, setCutPosition] = useState(0);
   const [score, setScore] = useState(0);
-  const animationRef = useRef<number | null>(null);
-  const seekbarRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+
+  // 肉の切断結果
   const [cutResult, setCutResult] = useState<{
     leftRatio: number;
     rightRatio: number;
     smallerGrams: number;
   } | null>(null);
 
+  // DOMの参照
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const seekBarRef = useRef<HTMLDivElement>(null);
+  const gameAreaRef = useRef<HTMLDivElement>(null);
+
+  // アニメーションの管理
+  const animationRef = useRef<number | null>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+
+  // 切断アニメーションの状態
+  const [isCutting, setIsCutting] = useState(false);
+  const [cutStartTime, setCutStartTime] = useState(0);
+  const [cutStartY, setCutStartY] = useState(0);
+  const [baselineY, setBaselineY] = useState(0);
+
   // キャンバスのサイズを設定
   useEffect(() => {
     const resizeCanvas = () => {
-      if (canvasRef.current) {
+      if (canvasRef.current && gameAreaRef.current && seekBarRef.current) {
         // 横幅は画面の50%
         const width = Math.min(window.innerWidth * 0.5, 500);
         const height = width * 0.6; // アスペクト比を保つ
@@ -69,6 +52,11 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
         setCanvasSize({ width, height });
         canvasRef.current.width = width;
         canvasRef.current.height = height;
+
+        // シークバーコンテナの幅をキャンバスに合わせる
+        if (seekBarRef.current) {
+          seekBarRef.current.style.width = `${width}px`;
+        }
 
         // プレイ中なら肉を再描画
         if (gameState === 'playing') {
@@ -85,7 +73,7 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
     return () => {
       window.removeEventListener('resize', resizeCanvas);
     };
-  }, [gameState]);
+  }, [gameState, cutPosition]);
 
   // 肉の絵を描画する関数
   const drawMeat = () => {
@@ -104,13 +92,14 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
     ctx.lineWidth = 2;
 
     // 下線のY座標（キャンバスの下から30%の位置）
-    const baselineY = canvas.height * 0.7;
+    const newBaselineY = canvas.height * 0.7;
+    setBaselineY(newBaselineY);
 
     // パスの開始
     ctx.beginPath();
 
     // 左下点から開始
-    ctx.moveTo(0, baselineY);
+    ctx.moveTo(0, newBaselineY);
 
     // ランダムな曲線を生成
     const numPoints = 5 + Math.floor(Math.random() * 4); // 5〜8個の制御点
@@ -121,13 +110,13 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
     for (let i = 0; i < numPoints; i++) {
       pointsX.push(canvas.width * (i / (numPoints - 1)));
       // 下線より上のランダムな高さ
-      const maxHeight = baselineY * 0.8;
-      pointsY.push(baselineY - (Math.random() * maxHeight));
+      const maxHeight = newBaselineY * 0.8;
+      pointsY.push(newBaselineY - (Math.random() * maxHeight));
     }
 
     // 最初と最後の点は下線に合わせる
-    pointsY[0] = baselineY;
-    pointsY[numPoints - 1] = baselineY;
+    pointsY[0] = newBaselineY;
+    pointsY[numPoints - 1] = newBaselineY;
 
     // 複数の弧を持つ曲線を描く
     for (let i = 0; i < numPoints - 1; i++) {
@@ -141,8 +130,8 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
     }
 
     // 下線を描く（右から左へ）
-    ctx.lineTo(canvas.width, baselineY);
-    ctx.lineTo(0, baselineY);
+    ctx.lineTo(canvas.width, newBaselineY);
+    ctx.lineTo(0, newBaselineY);
 
     // 塗りつぶし
     ctx.closePath();
@@ -165,9 +154,6 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
     ctx.fillStyle = '#FF6347';
     ctx.strokeStyle = '#8B3A3A';
     ctx.lineWidth = 2;
-
-    // 下線のY座標（キャンバスの下から30%の位置）
-    const baselineY = canvas.height * 0.7;
 
     // 切れ目の位置
     const cutX = (cutPosition / 100) * canvas.width;
@@ -222,14 +208,67 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
     });
   };
 
+  // シークバーのアニメーション（時間ベース）
+  const startAnimation = () => {
+    // 前回の更新時間とアニメーションの状態
+    let lastTimestamp = 0;
+    const TOTAL_DURATION = 1500; // シークバーが片道する時間（ミリ秒）
+
+    const animate = (timestamp: number) => {
+      // 初回実行時またはリセット後の初回実行時
+      if (!lastTimestamp) {
+        lastTimestamp = timestamp;
+      }
+
+      // 経過時間を計算（ミリ秒）
+      const elapsed = timestamp - lastTimestamp;
+      lastTimestamp = timestamp;
+
+      // カクつきを防ぐために、経過時間が異常に長い場合は調整
+      const safeElapsed = Math.min(elapsed, 50);
+
+      // 速度計算（1.5秒で端から端まで移動）
+      const speed = (100 / TOTAL_DURATION) * safeElapsed;
+
+      // 新しい位置を計算
+      let newPosition = seekPosition + speed * seekDirection;
+
+      // 方向の更新（端に到達したら逆方向へ）
+      let newDirection = seekDirection;
+      if (newPosition >= 100) {
+        newPosition = 100;
+        newDirection = -1;
+      } else if (newPosition <= 0) {
+        newPosition = 0;
+        newDirection = 1;
+      }
+
+      // 状態を更新
+      setSeekPosition(newPosition);
+      setSeekDirection(newDirection);
+
+      // ゲームが実行中なら次のフレームの処理を予約
+      if (gameState === 'playing') {
+        animationRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    // 初回のアニメーションフレームをリクエスト
+    animationRef.current = requestAnimationFrame(animate);
+  };
+
   // ゲーム開始
   const startGame = () => {
+    // ゲーム状態を「プレイ中」に設定
     setGameState('playing');
-    setMeatLength(300);
-    setCurrentPosition(0);
+
+    // 各種値をリセット
+    setSeekPosition(0);
+    setSeekDirection(1);
     setCutPosition(0);
     setScore(0);
     setCutResult(null);
+    setIsCutting(false);
 
     // setTimeout を使って描画が確実に実行されるようにする
     setTimeout(() => {
@@ -238,39 +277,21 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
     }, 0);
   };
 
-  // シーカーバーのアニメーション
-  const startAnimation = () => {
-    let direction = 1;
-    let position = 0;
-
-    const animate = () => {
-      position += 2 * direction;
-
-      // 端に到達したら方向転換
-      if (position >= 100 || position <= 0) {
-        direction *= -1;
-      }
-
-      setCurrentPosition(position);
-      animationRef.current = requestAnimationFrame(animate);
-    };
-
-    animationRef.current = requestAnimationFrame(animate);
-  };
-
   // 肉を切る
   const cutMeat = () => {
-    if (gameState !== 'playing') return;
+    if (gameState !== 'playing' || isCutting) return;
 
+    // アニメーションを停止
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
       animationRef.current = null;
     }
 
-    setCutPosition(currentPosition);
+    // カット位置を保存
+    setCutPosition(seekPosition);
 
     // スコア計算（50%からの差異に基づく）
-    const accuracy = Math.abs(50 - currentPosition);
+    const accuracy = Math.abs(50 - seekPosition);
     const newScore = Math.max(100 - accuracy * 2, 0);
     setScore(newScore);
 
@@ -288,11 +309,13 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
     }
   };
 
-  // アニメーション停止
+  // コンポーネントのアンマウント時に実行
   useEffect(() => {
     return () => {
+      // アニメーションを停止
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
       }
     };
   }, []);
@@ -301,6 +324,7 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
     <div className="max-w-md mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6">牛肉ぴったんこチャレンジ</h1>
 
+      {/* ゲーム開始前の画面 */}
       {gameState === 'ready' && (
         <div className="text-center">
           <p className="mb-4">牛肉をぴったり半分に切ってください！</p>
@@ -313,53 +337,72 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
         </div>
       )}
 
+      {/* ゲームプレイ画面 */}
       {gameState === 'playing' && (
-        <div className="flex flex-col items-center">
-          <div className="relative w-full">
-            {/* キャンバスを中央揃えに */}
-            <canvas
-              ref={canvasRef}
-              className="mx-auto bg-transparent"
-              style={{ display: 'block' }}
-            />
+        <div className="relative" ref={gameAreaRef}>
+          {/* シークバーコンテナ */}
+          <div
+            className="relative h-12 bg-gray-200 rounded-md mx-auto mb-4 overflow-hidden"
+            ref={seekBarRef}
+          >
+            {/* シークバー */}
+            <div
+              className="absolute top-0 h-full w-4 bg-gray-500 rounded-full transform -translate-x-1/2"
+              style={{ left: `${seekPosition}%` }}
+            ></div>
+          </div>
 
-            {/* シークバーをメモ化コンポーネントに変更 */}
-            <MemoizedSeekbar
-              currentPosition={currentPosition}
-              cutPosition={cutPosition}
-              gameState={gameState}
-              seekbarRef={seekbarRef}
-            />
+          {/* キャンバス - 中央揃えにする */}
+          <canvas
+            ref={canvasRef}
+            className="mx-auto bg-transparent"
+            style={{ display: 'block' }}
+          />
 
-            {/* カットボタンをキャンバスの下に配置するよう修正 */}
-            <div className="w-full flex justify-center mt-4">
-              <button
-                onClick={cutMeat}
-                className="cut-button"
-              >
-                <i className="fas fa-scissors"></i>
-              </button>
-            </div>
+          {/* カットボタン - キャンバスの下中央に配置 */}
+          <div className="w-full flex justify-center mt-4">
+            <button
+              onClick={cutMeat}
+              className="cut-button"
+            >
+              <i className="fas fa-scissors"></i>
+            </button>
           </div>
         </div>
       )}
 
+      {/* 結果画面 */}
       {gameState === 'result' && (
         <div className="text-center">
+          {/* キャンバス - 切った後の肉を表示 */}
           <canvas
             ref={canvasRef}
             className="mx-auto bg-transparent mb-4"
             style={{ display: 'block' }}
           />
 
-          {/* シークバーをメモ化コンポーネントに変更 */}
-          <MemoizedSeekbar
-            currentPosition={currentPosition}
-            cutPosition={cutPosition}
-            gameState={gameState}
-            seekbarRef={seekbarRef}
-          />
+          {/* シークバー（結果表示用） */}
+          <div className="relative h-12 bg-red-100 rounded-md mx-auto mb-8 overflow-hidden" ref={seekBarRef}>
+            {/* 現在位置マーカー */}
+            <div
+              className="absolute top-0 h-full w-2 bg-red-600"
+              style={{ left: `${seekPosition}%` }}
+            ></div>
 
+            {/* カットライン */}
+            <div
+              className="absolute top-0 h-full w-0.5 bg-black"
+              style={{ left: `${cutPosition}%` }}
+            ></div>
+
+            {/* 理想的な50%ライン */}
+            <div
+              className="absolute top-0 h-full w-0.5 bg-green-500 opacity-70"
+              style={{ left: `50%` }}
+            ></div>
+          </div>
+
+          {/* 結果表示 */}
           <div className="mt-6">
             <h2 className="text-xl font-bold">結果発表</h2>
             <p className="text-2xl mt-2">スコア: {score}点</p>
@@ -378,6 +421,7 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
                'もっと練習しましょう！'}
             </p>
 
+            {/* もう一度チャレンジボタン */}
             <button
               onClick={startGame}
               className="start-button mt-6"

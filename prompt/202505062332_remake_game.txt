@@ -1,0 +1,5 @@
+`src\components\BeefCutGame.tsx`が上手く動いていません。内容をすべて削除し再生成してください
+  - `public\index.html`のDOM、イベント、Script、Styleを利用してください
+  - gameStateの変更処理はBeefCutGame.tsxを参考にしてください
+    - `start-button`をクリックしたらsetGameStateでplayingに設定してください
+    - `cut-button`をクリックしたらsetGameStateでresultに設定してください
