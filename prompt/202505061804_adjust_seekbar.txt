@@ -1,0 +1,1 @@
+- `requestAnimationFrame`から`setInterval`に変更した動きがカクカクになりました。フレームレートを意識して滑らかに移動するようにしてください。
