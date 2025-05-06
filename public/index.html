@@ -29,10 +29,112 @@
         .start-button:hover {
             background-color: #A52A2A; /* ホバー時は少し明るい赤み色 */
         }
+        #game-area {
+            display: none;
+            width: 100%;
+            height: 70vh;
+            margin: 0 auto;
+        }
+        canvas {
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body>
-    <h1>牛肉ぴったんこチャレンジ</h1>
-    <button class="start-button">ゲームスタート</button>
+    <div id="start-screen">
+        <h1>牛肉ぴったんこチャレンジ</h1>
+        <button class="start-button">ゲームスタート</button>
+    </div>
+    <div id="game-area">
+        <canvas id="meat-canvas"></canvas>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const startButton = document.querySelector('.start-button');
+            const startScreen = document.getElementById('start-screen');
+            const gameArea = document.getElementById('game-area');
+            const canvas = document.getElementById('meat-canvas');
+            const ctx = canvas.getContext('2d');
+
+            // キャンバスのサイズ設定
+            function resizeCanvas() {
+                canvas.width = window.innerWidth * 0.5; // 画面の横幅の50%
+                canvas.height = window.innerHeight * 0.6;
+            }
+
+            // ウィンドウサイズが変更されたらキャンバスサイズも調整
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            // 肉の絵を描画する関数
+            function drawMeat() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // 肉の色
+                ctx.fillStyle = '#FF6347';
+                ctx.strokeStyle = '#8B3A3A';
+                ctx.lineWidth = 2;
+
+                // 下線のY座標（キャンバスの下から30%の位置）
+                const baselineY = canvas.height * 0.7;
+
+                // パスの開始
+                ctx.beginPath();
+
+                // 左下点から開始
+                ctx.moveTo(0, baselineY);
+
+                // ランダムな曲線を生成
+                const numPoints = 5 + Math.floor(Math.random() * 4); // 5〜8個の制御点
+                const pointsX = [];
+                const pointsY = [];
+
+                // ランダムな制御点を生成
+                for (let i = 0; i < numPoints; i++) {
+                    pointsX.push(canvas.width * (i / (numPoints - 1)));
+                    // 下線より上のランダムな高さ
+                    const maxHeight = baselineY * 0.8;
+                    pointsY.push(baselineY - (Math.random() * maxHeight));
+                }
+
+                // 最初と最後の点は下線に合わせる
+                pointsY[0] = baselineY;
+                pointsY[numPoints - 1] = baselineY;
+
+                // 複数の弧を持つ曲線を描く
+                for (let i = 0; i < numPoints - 1; i++) {
+                    const cpX1 = pointsX[i] + (pointsX[i+1] - pointsX[i]) / 3;
+                    const cpY1 = pointsY[i] - Math.random() * 50;
+
+                    const cpX2 = pointsX[i] + 2 * (pointsX[i+1] - pointsX[i]) / 3;
+                    const cpY2 = pointsY[i+1] - Math.random() * 50;
+
+                    ctx.bezierCurveTo(cpX1, cpY1, cpX2, cpY2, pointsX[i+1], pointsY[i+1]);
+                }
+
+                // 下線を描く（右から左へ）
+                ctx.lineTo(canvas.width, baselineY);
+                ctx.lineTo(0, baselineY);
+
+                // 塗りつぶし
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
+
+            // スタートボタンのクリックイベント
+            startButton.addEventListener('click', function() {
+                // スタート画面を非表示
+                startScreen.style.display = 'none';
+
+                // ゲームエリアを表示
+                gameArea.style.display = 'block';
+
+                // 肉の絵を描画
+                drawMeat();
+            });
+        });
+    </script>
 </body>
 </html>
