@@ -1,0 +1,5 @@
+- `<div className="relative">`が影響しているのか、以下の問題があります。
+  - canvasが左寄せになっています。中央寄せにしてください
+  - `cut-button`が下からの位置が固定になっています。canvasの下に固定にしてください
+  - `<div className="relative">`全体がrefreashされていませんか？seekBarのみリフレッシュするようにしてください
+  - seekBarが表示されていません

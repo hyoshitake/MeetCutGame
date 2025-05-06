@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 
 type GameState = 'ready' | 'playing' | 'result';
 
@@ -6,6 +6,41 @@ interface GameProps {
   userId: string;
   onSaveScore: (score: number) => Promise<void>;
 }
+
+// シーカーバーをメモ化してリフレッシュを最適化
+const MemoizedSeekbar = memo(({ currentPosition, cutPosition, gameState, seekbarRef }: {
+  currentPosition: number;
+  cutPosition: number;
+  gameState: GameState;
+  seekbarRef: React.RefObject<HTMLDivElement>;
+}) => (
+  <div className="relative w-full h-12 bg-red-100 rounded-md my-8 overflow-hidden" ref={seekbarRef}>
+    {/* 現在位置マーカー */}
+    <div
+      className="absolute top-0 h-full w-2 bg-red-600"
+      style={{ left: `${currentPosition}%` }}
+    ></div>
+
+    {/* カットライン（結果表示時のみ） */}
+    {gameState === 'result' && (
+      <div
+        className="absolute top-0 h-full w-0.5 bg-black"
+        style={{ left: `${cutPosition}%` }}
+      ></div>
+    )}
+
+    {/* 理想的な50%ライン（結果表示時のみ） */}
+    {gameState === 'result' && (
+      <div
+        className="absolute top-0 h-full w-0.5 bg-green-500 opacity-70"
+        style={{ left: `50%` }}
+      ></div>
+    )}
+  </div>
+));
+
+// 表示名を設定（デバッグ用）
+MemoizedSeekbar.displayName = 'MemoizedSeekbar';
 
 export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
   const [gameState, setGameState] = useState<GameState>('ready');
@@ -262,33 +297,6 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
     };
   }, []);
 
-  // シーカーバーコンポーネント
-  const Seekbar = () => (
-    <div className="relative w-full h-12 bg-red-100 rounded-md my-8 overflow-hidden" ref={seekbarRef}>
-      {/* 現在位置マーカー */}
-      <div
-        className="absolute top-0 h-full w-2 bg-red-600"
-        style={{ left: `${currentPosition}%` }}
-      ></div>
-
-      {/* カットライン（結果表示時のみ） */}
-      {gameState === 'result' && (
-        <div
-          className="absolute top-0 h-full w-0.5 bg-black"
-          style={{ left: `${cutPosition}%` }}
-        ></div>
-      )}
-
-      {/* 理想的な50%ライン（結果表示時のみ） */}
-      {gameState === 'result' && (
-        <div
-          className="absolute top-0 h-full w-0.5 bg-green-500 opacity-70"
-          style={{ left: `50%` }}
-        ></div>
-      )}
-    </div>
-  );
-
   return (
     <div className="max-w-md mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6">牛肉ぴったんこチャレンジ</h1>
@@ -306,21 +314,33 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
       )}
 
       {gameState === 'playing' && (
-        <div className="relative">
-          <canvas
-            ref={canvasRef}
-            className="mx-auto bg-transparent"
-            style={{ display: 'block' }}
-          />
+        <div className="flex flex-col items-center">
+          <div className="relative w-full">
+            {/* キャンバスを中央揃えに */}
+            <canvas
+              ref={canvasRef}
+              className="mx-auto bg-transparent"
+              style={{ display: 'block' }}
+            />
 
-          <Seekbar />
+            {/* シークバーをメモ化コンポーネントに変更 */}
+            <MemoizedSeekbar
+              currentPosition={currentPosition}
+              cutPosition={cutPosition}
+              gameState={gameState}
+              seekbarRef={seekbarRef}
+            />
 
-          <button
-            onClick={cutMeat}
-            className="cut-button"
-          >
-            <i className="fas fa-scissors"></i>
-          </button>
+            {/* カットボタンをキャンバスの下に配置するよう修正 */}
+            <div className="w-full flex justify-center mt-4">
+              <button
+                onClick={cutMeat}
+                className="cut-button"
+              >
+                <i className="fas fa-scissors"></i>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -332,7 +352,13 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
             style={{ display: 'block' }}
           />
 
-          <Seekbar />
+          {/* シークバーをメモ化コンポーネントに変更 */}
+          <MemoizedSeekbar
+            currentPosition={currentPosition}
+            cutPosition={cutPosition}
+            gameState={gameState}
+            seekbarRef={seekbarRef}
+          />
 
           <div className="mt-6">
             <h2 className="text-xl font-bold">結果発表</h2>
