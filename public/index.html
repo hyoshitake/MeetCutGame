@@ -36,6 +36,7 @@
             width: 100%;
             height: 70vh;
             margin: 0 auto;
+            position: relative; /* ゲームエリアに相対位置を設定 */
         }
         canvas {
             margin: 0 auto;
@@ -64,14 +65,18 @@
             width: 60px;
             height: 60px;
             border: none;
-            border-radius: 50%;
+            border-radius: 4px; /* 四角いボタンに変更 */
             cursor: pointer;
             transition: background-color 0.3s;
-            margin-top: 20px; /* キャンバスとの間隔 */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            display: flex;
+            display: inline-flex; /* flexを維持しつつインライン要素として表示 */
             align-items: center;
             justify-content: center;
+            position: absolute; /* 絶対位置指定 */
+            left: 50%; /* 左端を中央に */
+            transform: translateX(-50%); /* 中央揃え調整 */
+            bottom: 10px; /* 下端からの距離 */
+            margin: 0; /* マージンをリセット */
         }
 
         #cut-button:hover {

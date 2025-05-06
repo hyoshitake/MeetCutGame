@@ -1,0 +1,4 @@
+- `public/index.html`の`cut-button`が`display: flex`が指定されているのではみ出しています
+- canvasからmarginやpaddingで空行を入れずに`cut-button`を表示してください
+- `cut-button`は画面左右中央に表示してください
+- `cut-button`は四角いボタンにしてください
