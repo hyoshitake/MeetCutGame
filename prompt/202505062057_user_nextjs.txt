@@ -1,0 +1,4 @@
+SupabaseのAuthを利用するためにNext.jsで書き直してください
+  - Dockerfileを作成してください
+  - node:22を利用してください
+  - next.js等のnpmパッケージはdockerコンテナ内でinstallしてください
