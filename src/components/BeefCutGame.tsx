@@ -247,10 +247,8 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
       setSeekPosition(newPosition);
       setSeekDirection(newDirection);
 
-      // ゲームが実行中なら次のフレームの処理を予約
-      if (gameState === 'playing') {
-        animationRef.current = requestAnimationFrame(animate);
-      }
+      // アニメーションを継続（この行を修正）
+      animationRef.current = requestAnimationFrame(animate);
     };
 
     // 初回のアニメーションフレームをリクエスト
@@ -356,7 +354,6 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
           <canvas
             ref={canvasRef}
             className="mx-auto bg-transparent"
-            style={{ display: 'block' }}
           />
 
           {/* カットボタン - キャンバスの下中央に配置 */}
@@ -378,7 +375,6 @@ export default function BeefCutGame({ userId, onSaveScore }: GameProps) {
           <canvas
             ref={canvasRef}
             className="mx-auto bg-transparent mb-4"
-            style={{ display: 'block' }}
           />
 
           {/* シークバー（結果表示用） */}

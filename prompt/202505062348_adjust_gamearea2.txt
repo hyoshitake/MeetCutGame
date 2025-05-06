@@ -1,0 +1,10 @@
+- `src\components\BeefCutGame.tsx`のcanvasの`display: block`を削除してください。中央寄せになります
+- `cut-button`の`position: absolute`を削除してください
+- seek-barのleftが更新されません。
+  以下のrequestAnimationFrameの更新処理が必要ないのではないでしょうか？
+  ```
+  // ゲームが実行中なら次のフレームの処理を予約
+  if (gameState === 'playing') {
+    animationRef.current = requestAnimationFrame(animate);
+  }
+  ```
