@@ -1,0 +1,8 @@
+- docker-composeとDockerfileを作成して下さい
+  - `node:22`のimageを利用してください
+  - supabaseに連携します
+    - Next.jsをinstallしてください
+    - `@supabase/supabase-js`をinstallしてください
+  - hotReloadを実現してください
+  - カレントディレクトリをDockerコンテナにマウントしてください
+    - docker-compose.ymlに記載してください
