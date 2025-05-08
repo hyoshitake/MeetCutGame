@@ -1,0 +1,5 @@
+- BeefCanvasで追加されるcanvasは`width: 640`にしてください
+- BeefCanvasで追加されるcanvasは`hegiht: 320`にしてください
+- startXはcanvasの左端にしてください
+- endXはcanvasの右端にしてください
+- bottomYはcanvasの下端にしてください

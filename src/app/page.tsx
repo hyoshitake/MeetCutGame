@@ -21,8 +21,8 @@ const BeefCanvas = () => {
     if (!ctx) return;
 
     // キャンバスのサイズ設定
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
+    canvas.width = 640;
+    canvas.height = 320;
 
     // お肉の描画
     drawBeef(ctx, canvas.width, canvas.height);
@@ -39,9 +39,9 @@ const BeefCanvas = () => {
     ctx.beginPath();
 
     // 下線の開始点（左端）
-    const startX = width * 0.25; // 全体の横幅の50%にするため、左端は25%の位置から始める
-    const endX = width * 0.75;   // 右端は75%の位置
-    const bottomY = height * 0.8; // 下線のY座標（キャンバスの80%の位置）
+    const startX = 0; // canvasの左端
+    const endX = width; // canvasの右端
+    const bottomY = height; // canvasの下端
 
     // 下線の左端から開始
     ctx.moveTo(startX, bottomY);
@@ -54,7 +54,7 @@ const BeefCanvas = () => {
     for (let i = 0; i < numPoints; i++) {
       const x = startX + ((endX - startX) * (i + 1)) / (numPoints + 1);
       // 上部の曲線はランダムな高さに
-      const y = bottomY - Math.random() * (bottomY * 0.6);
+      const y = bottomY - Math.random() * (bottomY * 0.8);
       points.push({ x, y });
     }
 
@@ -89,7 +89,7 @@ const BeefCanvas = () => {
     <canvas
       ref={canvasRef}
       className="w-full h-64 mx-auto border border-gray-300 rounded"
-      style={{ maxWidth: '50%' }}
+      style={{ width: '640px', height: '320px', maxWidth: '100%' }}
     />
   );
 };
