@@ -98,38 +98,40 @@ export default function Home() {
   const [gameState, setGameState] = useState('waiting') // waiting, playing, result
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4">
-      <h1 className="text-4xl font-bold text-center mb-8">牛肉ぴったんこチャレンジ</h1>
+    <div className="flex justify-center items-center w-full">
+      <main className="flex min-h-screen flex-col items-center justify-center p-4" style={{ minWidth: '640px', maxWidth: '1200px', width: '100%' }}>
+        <h1 className="text-4xl font-bold text-center mb-8">牛肉ぴったんこチャレンジ</h1>
 
-      {gameState === 'waiting' && (
-        <button
-          className="px-6 py-3 text-lg bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300"
-          onClick={() => setGameState('playing')}
-        >
-          ゲームスタート
-        </button>
-      )}
-
-      {gameState === 'playing' && (
-        <div className="w-full max-w-lg">
-          <p className="text-center mb-4">肉をぴったり半分に切ろう！</p>
-          <div className="flex justify-center">
-            <BeefCanvas />
-          </div>
-        </div>
-      )}
-
-      {gameState === 'result' && (
-        <div className="w-full max-w-lg text-center">
-          <p className="text-xl mb-4">結果</p>
+        {gameState === 'waiting' && (
           <button
-            className="px-6 py-3 text-lg bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300 mt-4"
-            onClick={() => setGameState('waiting')}
+            className="px-6 py-3 text-lg bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300"
+            onClick={() => setGameState('playing')}
           >
-            もう一度チャレンジ
+            ゲームスタート
           </button>
-        </div>
-      )}
-    </main>
+        )}
+
+        {gameState === 'playing' && (
+          <div className="w-full max-w-lg mx-auto">
+            <p className="text-center mb-4">肉をぴったり半分に切ろう！</p>
+            <div className="flex justify-center">
+              <BeefCanvas />
+            </div>
+          </div>
+        )}
+
+        {gameState === 'result' && (
+          <div className="w-full max-w-lg text-center mx-auto">
+            <p className="text-xl mb-4">結果</p>
+            <button
+              className="px-6 py-3 text-lg bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300 mt-4"
+              onClick={() => setGameState('waiting')}
+            >
+              もう一度チャレンジ
+            </button>
+          </div>
+        )}
+      </main>
+    </div>
   )
 }
