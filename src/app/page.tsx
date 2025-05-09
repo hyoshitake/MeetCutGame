@@ -88,7 +88,7 @@ const BeefCanvas = () => {
   return (
     <canvas
       ref={canvasRef}
-      className="w-full h-64 mx-auto border border-gray-300 rounded"
+      className="w-full h-64 mx-auto rounded"
       style={{ width: '640px', height: '320px', maxWidth: '100%' }}
     />
   );
