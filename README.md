@@ -57,7 +57,7 @@ npm run dev
 yarn dev
 ```
 
-6. ブラウザで[http://localhost:3000](http://localhost:3000)にアクセス
+6. ブラウザで[http://localhost:12300](http://localhost:12300)にアクセス
 
 ## Dockerでの実行
 
@@ -66,7 +66,7 @@ yarn dev
 docker build -t beef-cut-game .
 
 # コンテナを実行
-docker run -p 3000:3000 beef-cut-game
+docker run -p 12300:12300 beef-cut-game
 ```
 
 ## ライセンス

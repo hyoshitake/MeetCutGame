@@ -25,5 +25,5 @@ ENV NODE_ENV=development
 # コンテナ起動時にnpm run devを実行
 CMD ["npm", "run", "dev"]
 
-# ポート3000を公開
-EXPOSE 3000
+# ポート12300を公開
+EXPOSE 12300

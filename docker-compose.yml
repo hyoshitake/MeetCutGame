@@ -8,12 +8,13 @@ services:
     volumes:
       - .:/app
     ports:
-      - "3000:3000"
+      - "12300:12300"
     env_file:
       - .env.local
     environment:
       - NODE_ENV=development
       - WATCHPACK_POLLING=true
+      - PORT=12300
     tty: true
     stdin_open: true
     # command: sh
