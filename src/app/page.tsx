@@ -9,8 +9,11 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // お肉を描画するコンポーネント
-const BeefCanvas = () => {
+const BeefCanvas = ({ gameState }: { gameState: string }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const seekBarPositionRef = useRef<number>(0);
+  const directionRef = useRef<boolean>(true); // true: 右向き, false: 左向き
 
   // キャンバスの初期化とお肉の描画
   useEffect(() => {
@@ -24,9 +27,80 @@ const BeefCanvas = () => {
     canvas.width = 640;
     canvas.height = 320;
 
-    // お肉の描画
+    // お肉を描画
     drawBeef(ctx, canvas.width, canvas.height);
-  }, []);
+
+    // シークバーのアニメーションを開始（playingの場合のみ）
+    if (gameState === 'playing') {
+      startSeekBarAnimation();
+    }
+
+    // クリーンアップ
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [gameState]);
+
+  // シークバーのアニメーションを開始する関数
+  const startSeekBarAnimation = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // フレームごとの移動量を計算 (1.5秒で片道)
+    // 60fps を想定した場合、90フレームで片道になるようにする
+    const frameRate = 60; // 想定フレームレート
+    const movementDuration = 1.5; // 秒
+    const totalFrames = frameRate * movementDuration;
+    const speed = width / totalFrames;
+
+    // アニメーションフレーム
+    const animateSeekBar = () => {
+      // キャンバスをクリア
+      ctx.clearRect(0, 0, width, height);
+
+      // お肉を再描画
+      drawBeef(ctx, width, height);
+
+      // シークバーの位置を更新
+      if (directionRef.current) {
+        // 右向きに移動
+        seekBarPositionRef.current += speed;
+        if (seekBarPositionRef.current >= width) {
+          seekBarPositionRef.current = width;
+          directionRef.current = false; // 左向きに切り替え
+        }
+      } else {
+        // 左向きに移動
+        seekBarPositionRef.current -= speed;
+        if (seekBarPositionRef.current <= 0) {
+          seekBarPositionRef.current = 0;
+          directionRef.current = true; // 右向きに切り替え
+        }
+      }
+
+      // シークバーを描画
+      ctx.beginPath();
+      ctx.moveTo(seekBarPositionRef.current, 0);
+      ctx.lineTo(seekBarPositionRef.current, 20);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#888888'; // 灰色
+      ctx.stroke();
+
+      // 次のフレームをリクエスト
+      animationFrameRef.current = requestAnimationFrame(animateSeekBar);
+    };
+
+    // アニメーションを開始
+    animationFrameRef.current = requestAnimationFrame(animateSeekBar);
+  };
 
   // お肉を描画する関数
   const drawBeef = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
@@ -115,7 +189,7 @@ export default function Home() {
           <div className="w-full max-w-lg mx-auto">
             <p className="text-center mb-4">肉をぴったり半分に切ろう！</p>
             <div className="flex justify-center">
-              <BeefCanvas />
+              <BeefCanvas gameState={gameState} />
             </div>
           </div>
         )}
