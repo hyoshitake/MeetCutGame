@@ -12,10 +12,10 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey)
 const BeefCanvas = ({ gameState }: { gameState: string }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const seekBarPositionRef = useRef<number>(0);
+  const [seekBarPosition, setSeekBarPosition] = useState(0);
   const directionRef = useRef<boolean>(true); // true: 右向き, false: 左向き
 
-  // キャンバスの初期化とお肉の描画
+  // 最初の一回だけお肉を描画
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -27,10 +27,12 @@ const BeefCanvas = ({ gameState }: { gameState: string }) => {
     canvas.width = 640;
     canvas.height = 320;
 
-    // お肉を描画
+    // お肉を描画（一度だけ）
     drawBeef(ctx, canvas.width, canvas.height);
+  }, []);
 
-    // シークバーのアニメーションを開始（playingの場合のみ）
+  // シークバーのアニメーションを開始（playingの場合のみ）
+  useEffect(() => {
     if (gameState === 'playing') {
       startSeekBarAnimation();
     }
@@ -48,11 +50,7 @@ const BeefCanvas = ({ gameState }: { gameState: string }) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
     const width = canvas.width;
-    const height = canvas.height;
 
     // フレームごとの移動量を計算 (1.5秒で片道)
     // 60fps を想定した場合、90フレームで片道になるようにする
@@ -63,36 +61,28 @@ const BeefCanvas = ({ gameState }: { gameState: string }) => {
 
     // アニメーションフレーム
     const animateSeekBar = () => {
-      // キャンバスをクリア
-      ctx.clearRect(0, 0, width, height);
-
-      // お肉を再描画
-      drawBeef(ctx, width, height);
-
       // シークバーの位置を更新
-      if (directionRef.current) {
-        // 右向きに移動
-        seekBarPositionRef.current += speed;
-        if (seekBarPositionRef.current >= width) {
-          seekBarPositionRef.current = width;
-          directionRef.current = false; // 左向きに切り替え
-        }
-      } else {
-        // 左向きに移動
-        seekBarPositionRef.current -= speed;
-        if (seekBarPositionRef.current <= 0) {
-          seekBarPositionRef.current = 0;
-          directionRef.current = true; // 右向きに切り替え
-        }
-      }
+      setSeekBarPosition(prevPosition => {
+        let newPosition = prevPosition;
 
-      // シークバーを描画
-      ctx.beginPath();
-      ctx.moveTo(seekBarPositionRef.current, 0);
-      ctx.lineTo(seekBarPositionRef.current, 20);
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = '#888888'; // 灰色
-      ctx.stroke();
+        if (directionRef.current) {
+          // 右向きに移動
+          newPosition += speed;
+          if (newPosition >= width) {
+            newPosition = width;
+            directionRef.current = false; // 左向きに切り替え
+          }
+        } else {
+          // 左向きに移動
+          newPosition -= speed;
+          if (newPosition <= 0) {
+            newPosition = 0;
+            directionRef.current = true; // 右向きに切り替え
+          }
+        }
+
+        return newPosition;
+      });
 
       // 次のフレームをリクエスト
       animationFrameRef.current = requestAnimationFrame(animateSeekBar);
@@ -160,11 +150,25 @@ const BeefCanvas = ({ gameState }: { gameState: string }) => {
   };
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="w-full h-64 mx-auto rounded"
-      style={{ width: '640px', height: '320px', maxWidth: '100%' }}
-    />
+    <div className="relative w-full" style={{ width: '640px', maxWidth: '100%' }}>
+      {/* シークバー（円形）- canvasの上に配置 */}
+      {gameState === 'playing' && (
+        <div
+          className="absolute top-0 z-10 rounded-full bg-gray-500"
+          style={{
+            width: '10px',
+            height: '10px',
+            left: `${seekBarPosition}px`,
+            transform: 'translateX(-50%)'
+          }}
+        />
+      )}
+      <canvas
+        ref={canvasRef}
+        className="w-full h-64 mx-auto rounded"
+        style={{ width: '640px', height: '320px', maxWidth: '100%' }}
+      />
+    </div>
   );
 };
 

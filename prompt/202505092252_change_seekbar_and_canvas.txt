@@ -1,0 +1,4 @@
+- seekbarの動きに合わせてcanvasが再描画されてしまい、お肉が再計算されています
+  - seekbarはcanvasの中に描画しないでください
+  - seekbarはcanvasの上に描画がしてください
+  - seekbarは円にしてください。`width: 10px`、`height: 10px`にしてください
