@@ -123,12 +123,6 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
 
   // カットアニメーション
   const startCutAnimation = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
     let currentY = 0;
     const height = canvas.height;
     const cutSpeed = 8; // 1フレームあたりの移動ピクセル数
@@ -296,7 +290,7 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
       {/* カットボタン */}
       {gameState === 'playing' && !cuttingInProgress && (
         <button
-          className={`w-12 h-12 flex items-center justify-center bg-gray-200 border border-gray-300 shadow-md absolute left-1/2 transform -translate-x-1/2 ${buttonFlash ? 'bg-yellow-300' : ''}`}
+          className={`mt-4 w-12 h-12 flex items-center justify-center bg-gray-200 border border-gray-300 shadow-md absolute left-1/2 transform -translate-x-1/2 ${buttonFlash ? 'bg-yellow-300' : ''}`}
           onClick={handleCut}
           style={{
             transition: 'all 0.1s ease'
