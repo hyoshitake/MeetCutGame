@@ -110,10 +110,6 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
       cancelAnimationFrame(animationFrameRef.current);
     }
 
-    // 現在のシークバー位置を保存
-    setCutPosition(seekBarPosition);
-    setCuttingInProgress(true);
-
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -123,6 +119,12 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
 
   // カットアニメーション
   const startCutAnimation = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
     let currentY = 0;
     const height = canvas.height;
     const cutSpeed = 8; // 1フレームあたりの移動ピクセル数
@@ -131,15 +133,11 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
     // カットアニメーションフレーム
     const animateCut = () => {
       // 現在のシークバー位置でY座標を増加
-      const x = cutPosition || 0;
+      const x = seekBarPosition || 0;
       currentY += cutSpeed;
 
       // 軌跡を記録
       cutLine.push({x, y: currentY});
-
-      // 描画を更新（お肉と切断線）
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawBeef(ctx, canvas.width, canvas.height);
 
       // 切断線を描画
       ctx.beginPath();
@@ -268,19 +266,6 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
         />
       )}
 
-      {/* カット中のシークバー - 下に移動するためのもの */}
-      {cuttingInProgress && cutPosition !== null && (
-        <div
-          className="absolute z-10 rounded-full bg-gray-500"
-          style={{
-            width: '10px',
-            height: '10px',
-            left: `${cutPosition}px`,
-            transform: 'translateX(-50%)'
-          }}
-        />
-      )}
-
       <canvas
         ref={canvasRef}
         className="w-full h-64 mx-auto rounded"
@@ -330,7 +315,7 @@ export default function Home() {
         )}
 
         {gameState === 'playing' && (
-          <div className="w-full max-w-lg mx-auto">
+          <div className="w-full mx-auto">
             <p className="text-center mb-4">肉をぴったり半分に切ろう！</p>
             <div className="flex justify-center">
               <BeefCanvas gameState={gameState} setGameState={setGameState} />
