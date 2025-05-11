@@ -15,10 +15,7 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
   const animationFrameRef = useRef<number | null>(null);
   const [seekBarPosition, setSeekBarPosition] = useState(0);
   const directionRef = useRef<boolean>(true); // true: 右向き, false: 左向き
-  const [cuttingInProgress, setCuttingInProgress] = useState(false);
-  const [cutPosition, setCutPosition] = useState<number | null>(null);
   const [buttonFlash, setButtonFlash] = useState(false);
-  const [meatSplit, setMeatSplit] = useState(false);
   const [leftMeatRatio, setLeftMeatRatio] = useState(0);
   const [rightMeatRatio, setRightMeatRatio] = useState(0);
   const [resultWeight, setResultWeight] = useState(0);
@@ -171,7 +168,7 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
     if (!canvas) return;
 
     const totalWidth = canvas.width;
-    const cutPos = cutPosition || 0;
+    const cutPos = seekBarPosition || 0;
 
     // 左側と右側の肉の割合を計算
     const leftRatio = cutPos / totalWidth;
@@ -184,9 +181,6 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
     const smallerRatio = Math.min(leftRatio, rightRatio);
     const weight = Math.round(smallerRatio * 1000 * 10) / 10; // 小数点第1位で四捨五入
     setResultWeight(weight);
-
-    // 分割アニメーションの開始
-    setMeatSplit(true);
 
     // ゲーム状態を結果に変更
     setTimeout(() => {
@@ -254,7 +248,7 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
   return (
     <div className="relative w-full" style={{ width: '640px', maxWidth: '100%' }}>
       {/* シークバー（円形）- canvasの上に配置 */}
-      {gameState === 'playing' && !cuttingInProgress && (
+      {gameState === 'playing' && (
         <div
           className="absolute top-0 z-10 rounded-full bg-gray-500"
           style={{
@@ -273,7 +267,7 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
       />
 
       {/* カットボタン */}
-      {gameState === 'playing' && !cuttingInProgress && (
+      {gameState === 'playing' && (
         <button
           className={`mt-4 w-12 h-12 flex items-center justify-center bg-gray-200 border border-gray-300 shadow-md absolute left-1/2 transform -translate-x-1/2 ${buttonFlash ? 'bg-yellow-300' : ''}`}
           onClick={handleCut}
