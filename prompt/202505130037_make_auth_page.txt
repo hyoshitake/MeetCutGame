@@ -1,0 +1,9 @@
+- 認証ページを表示してください
+  - 認証はSupabaseで行います
+  - Social AuthのGoogle認証とFacebook認証、およびゲスト認証を用意してください
+  - ニックネームを設定できるようにしてください
+  - ログイン情報はSupabaseのProfilesテーブルに保存してください
+    - ユーザのkeyはProfilesのkeyに保存してください
+    - ニックネームはProfilesのusernameに保存してください
+  - 認証ページはSaveDialogに表示してください。
+

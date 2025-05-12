@@ -1,14 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { createClient } from '@supabase/supabase-js'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faScissors } from '@fortawesome/free-solid-svg-icons'
-
-// Supabaseクライアントの初期化
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+import { supabase } from '@/utils/supabase'
+import { useAuth } from '@/context/AuthContext'
+import AuthDialog from '@/components/AuthDialog'
 
 // お肉を描画するコンポーネント
 const BeefCanvas = ({
@@ -435,6 +432,8 @@ export default function Home() {
   const [gameState, setGameState] = useState('waiting') // waiting, playing, result
   const [gameResult, setGameResult] = useState({ resultWeight: 0, leftRatio: 0, rightRatio: 0 })
   const [showSaveDialog, setShowSaveDialog] = useState(false)
+  const [showAuthDialog, setShowAuthDialog] = useState(false)
+  const { user, profile, refreshProfile } = useAuth()
 
   // BeefCanvasコンポーネントから結果を受け取る関数
   const handleGameResult = (result: { resultWeight: number, leftRatio: number, rightRatio: number }) => {
@@ -444,7 +443,44 @@ export default function Home() {
 
   // 保存ダイアログを表示する関数
   const handleShowSaveDialog = () => {
+    if (!user) {
+      // 未ログインの場合は認証ダイアログを表示
+      setShowAuthDialog(true)
+    } else {
+      setShowSaveDialog(true)
+    }
+  }
+
+  // 認証完了時の処理
+  const handleAuthComplete = async (userId: string, username: string) => {
+    await refreshProfile()
+    setShowAuthDialog(false)
     setShowSaveDialog(true)
+  }
+
+  // スコア保存処理
+  const handleSaveScore = async () => {
+    if (!user) return
+
+    try {
+      const { error } = await supabase
+        .from('scores')
+        .insert([
+          {
+            user_id: user.id,
+            score: gameResult.resultWeight,
+            created_at: new Date().toISOString()
+          }
+        ])
+
+      if (error) throw error
+
+      alert('スコアを保存しました！')
+      setShowSaveDialog(false)
+    } catch (error) {
+      console.error('スコア保存エラー:', error)
+      alert('スコアの保存に失敗しました')
+    }
   }
 
   return (
@@ -490,14 +526,17 @@ export default function Home() {
               onClick={handleShowSaveDialog}
             >
               記録を保存する
-            </button>
-
-            {/* 記録保存ダイアログ */}
+            </button>            {/* 記録保存ダイアログ */}
             {showSaveDialog && (
               <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                 <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
                   <h3 className="text-lg font-bold mb-4">記録を保存</h3>
                   <p className="mb-4">あなたの記録: {gameResult.resultWeight}g</p>
+
+                  {profile && (
+                    <p className="mb-4">ユーザー名: {profile.username}</p>
+                  )}
+
                   <div className="flex justify-end">
                     <button
                       className="px-4 py-2 text-sm bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition duration-300 mr-2"
@@ -507,10 +546,7 @@ export default function Home() {
                     </button>
                     <button
                       className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-300"
-                      onClick={() => {
-                        // 保存処理をここに実装
-                        setShowSaveDialog(false)
-                      }}
+                      onClick={handleSaveScore}
                     >
                       保存する
                     </button>
@@ -518,6 +554,13 @@ export default function Home() {
                 </div>
               </div>
             )}
+
+            {/* 認証ダイアログ */}
+            <AuthDialog
+              isOpen={showAuthDialog}
+              onClose={() => setShowAuthDialog(false)}
+              onAuthComplete={handleAuthComplete}
+            />
           </div>
         )}
       </main>
