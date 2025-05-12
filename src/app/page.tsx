@@ -426,9 +426,7 @@ const BeefCanvas = ({
         >
           <FontAwesomeIcon icon={faScissors} className="text-gray-700" size="lg" />
         </button>
-      )}      {/* BeefCanvas内の結果表示は削除（親コンポーネントで表示するため） */}
-      {/* デバッグ用の情報表示（本番では不要であれば削除可能） */}
-      {gameState !== 'result' && <div className="text-xs text-gray-400">result: {resultWeight}g</div>}
+      )}
     </div>
   );
 };
@@ -436,11 +434,17 @@ const BeefCanvas = ({
 export default function Home() {
   const [gameState, setGameState] = useState('waiting') // waiting, playing, result
   const [gameResult, setGameResult] = useState({ resultWeight: 0, leftRatio: 0, rightRatio: 0 })
+  const [showSaveDialog, setShowSaveDialog] = useState(false)
 
   // BeefCanvasコンポーネントから結果を受け取る関数
   const handleGameResult = (result: { resultWeight: number, leftRatio: number, rightRatio: number }) => {
     setGameResult(result);
     setGameState('result');
+  }
+
+  // 保存ダイアログを表示する関数
+  const handleShowSaveDialog = () => {
+    setShowSaveDialog(true)
   }
 
   return (
@@ -475,13 +479,45 @@ export default function Home() {
                 <p className="text-lg">小さい方の肉: {gameResult.resultWeight}g</p>
                 <p className="text-md">分割比率: {Math.round(gameResult.leftRatio * 100)}% : {Math.round(gameResult.rightRatio * 100)}%</p>
               </div>
-            </div>
-            <button
+            </div>            <button
               className="px-6 py-3 text-lg bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300 mt-4"
               onClick={() => setGameState('waiting')}
             >
               もう一度チャレンジ
             </button>
+            <button
+              className="px-6 py-3 text-lg bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-300 mt-4 ml-2"
+              onClick={handleShowSaveDialog}
+            >
+              記録を保存する
+            </button>
+
+            {/* 記録保存ダイアログ */}
+            {showSaveDialog && (
+              <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+                <div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full">
+                  <h3 className="text-lg font-bold mb-4">記録を保存</h3>
+                  <p className="mb-4">あなたの記録: {gameResult.resultWeight}g</p>
+                  <div className="flex justify-end">
+                    <button
+                      className="px-4 py-2 text-sm bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition duration-300 mr-2"
+                      onClick={() => setShowSaveDialog(false)}
+                    >
+                      キャンセル
+                    </button>
+                    <button
+                      className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-300"
+                      onClick={() => {
+                        // 保存処理をここに実装
+                        setShowSaveDialog(false)
+                      }}
+                    >
+                      保存する
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>
