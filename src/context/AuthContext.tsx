@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { Session, User } from '@supabase/supabase-js'
-import { supabase } from '@/utils/supabase'
+import { supabase, fetchProfile } from '@/utils/supabase'
 
 interface AuthContextProps {
   user: User | null
@@ -27,14 +27,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [profile, setProfile] = useState<{ id: string; username: string } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-
   // プロフィールを更新する関数
   const refreshProfile = async () => {
     if (user) {
-      // const profile = await fetchProfile(user.id)
-      // if (profile) {
-      //   setProfile(profile)
-      // }
+      const userProfile = await fetchProfile(user.id)
+      if (userProfile) {
+        setProfile(userProfile)
+      }
     }
   }
 
@@ -55,13 +54,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const initializeAuth = async () => {
       setIsLoading(true)
 
-      try {
-        // 現在のセッションを取得
+      try {        // 現在のセッションを取得
         const { data: { session } } = await supabase.auth.getSession()
 
         if (session) {
           setSession(session)
           setUser(session.user)
+
+          // ユーザープロフィール情報も取得
+          const userProfile = await fetchProfile(session.user.id)
+          if (userProfile) {
+            setProfile(userProfile)
+          }
         }
       } catch (error) {
         console.error('認証初期化中にエラーが発生しました:', error)
@@ -70,13 +74,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    initializeAuth()
-
-    // 認証状態変更のリスナーを設定
+    initializeAuth()    // 認証状態変更のリスナーを設定
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         setSession(session)
         setUser(session?.user ?? null)
+
+        // ユーザーがログインした場合はプロフィール情報も取得
+        if (session?.user) {
+          const userProfile = await fetchProfile(session.user.id)
+          if (userProfile) {
+            setProfile(userProfile)
+          }
+        }
       }
     )
 

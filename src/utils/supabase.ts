@@ -7,9 +7,27 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 // Supabaseクライアントを作成
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+// プロフィール情報取得関数
+export const fetchProfile = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, username")
+      .eq("id", userId)
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error("プロフィール取得エラー:", error);
+    return null;
+  }
+};
+
 // プロファイル更新関数
 export const updateUserProfile = async (userId: string, username: string) => {
   try {
+    // upsert処理 - レコードが存在しない場合は作成し、存在する場合は更新する
     const { error } = await supabase.from("profiles").upsert({
       id: userId,
       username,

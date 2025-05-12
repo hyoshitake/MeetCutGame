@@ -1,0 +1,2 @@
+`src\app\make_account\page.tsx`で`handleSubmit`が実行された後にProfileを更新しますが、SupabaseのProfileテーブルにuserが存在しないパターンもあります
+updateUserProfileでProfileが存在しなかった場合はデータをcreateする処理を入れてください
