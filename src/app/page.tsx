@@ -20,6 +20,12 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
   const [rightMeatRatio, setRightMeatRatio] = useState(0);
   const [resultWeight, setResultWeight] = useState(0);
 
+  // お肉の形状を保存する参照を追加
+  const beefShapeRef = useRef<Array<{x: number, y: number}>>([]);
+  // 分割後のお肉の状態を管理
+  const [cutAnimationProgress, setCutAnimationProgress] = useState(0);
+  const [isCutAnimationComplete, setIsCutAnimationComplete] = useState(false);
+
   // 最初の一回だけお肉を描画
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -35,6 +41,37 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
     // お肉を描画（一度だけ）
     drawBeef(ctx, canvas.width, canvas.height);
   }, []);
+
+  // カット後のアニメーションを監視
+  useEffect(() => {
+    if (cutAnimationProgress > 0 && cutAnimationProgress < 1) {
+      // アニメーションを更新
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // キャンバスをクリア
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 分割されたお肉を描画
+      drawSplitMeat(ctx, canvas.width, canvas.height, cutAnimationProgress);
+
+      // アニメーションを続ける
+      const animationId = requestAnimationFrame(() => {
+        setCutAnimationProgress(prev => Math.min(prev + 0.02, 1));
+      });
+
+      return () => cancelAnimationFrame(animationId);
+    } else if (cutAnimationProgress >= 1 && !isCutAnimationComplete) {
+      setIsCutAnimationComplete(true);
+      // アニメーション完了後、ゲーム状態を結果に変更
+      setTimeout(() => {
+        setGameState('result');
+      }, 500);
+    }
+  }, [cutAnimationProgress, isCutAnimationComplete, setGameState]);
 
   // シークバーのアニメーションを開始（playingの場合のみ）
   useEffect(() => {
@@ -182,10 +219,9 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
     const weight = Math.round(smallerRatio * 1000 * 10) / 10; // 小数点第1位で四捨五入
     setResultWeight(weight);
 
-    // ゲーム状態を結果に変更
-    setTimeout(() => {
-      setGameState('result');
-    }, 1000);
+    // 分割アニメーションを開始
+    setCutAnimationProgress(0);
+    setIsCutAnimationComplete(false);
   };
 
   // お肉を描画する関数
@@ -240,6 +276,67 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
     ctx.lineTo(startX, bottomY);
 
     // お肉を塗りつぶす
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // お肉の形状を保存
+    beefShapeRef.current = [
+      { x: startX, y: bottomY },
+      ...points.map(p => ({ x: p.x, y: p.y })),
+      { x: endX, y: bottomY }
+    ];
+  };
+
+  // 分割されたお肉を描画する関数
+  const drawSplitMeat = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
+    const cutPos = seekBarPosition || 0;
+    const beefShape = beefShapeRef.current;
+    const bottomY = height;
+
+    if (beefShape.length === 0) return;
+
+    // 左側のお肉
+    ctx.fillStyle = '#FF8C94';
+    ctx.strokeStyle = '#E56A77';
+    ctx.lineWidth = 2;
+
+    // 左側お肉の移動距離を計算（進行に応じて）
+    const leftOffset = -cutPos * 0.3 * progress;
+
+    ctx.beginPath();
+    ctx.moveTo(0 + leftOffset, bottomY);
+
+    // 左側お肉の形状を描画
+    for (const point of beefShape) {
+      if (point.x <= cutPos) {
+        ctx.lineTo(point.x + leftOffset, point.y);
+      }
+    }
+
+    // 切断線
+    ctx.lineTo(cutPos + leftOffset, 0);
+    ctx.lineTo(cutPos + leftOffset, bottomY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 右側のお肉
+    ctx.beginPath();
+
+    // 右側お肉の移動距離を計算（進行に応じて）
+    const rightOffset = (width - cutPos) * 0.3 * progress;
+
+    // 切断線
+    ctx.moveTo(cutPos + rightOffset, 0);
+    ctx.lineTo(cutPos + rightOffset, bottomY);
+
+    // 右側お肉の形状を描画
+    const rightSidePoints = beefShape.filter(point => point.x >= cutPos);
+    for (const point of rightSidePoints) {
+      ctx.lineTo(point.x + rightOffset, point.y);
+    }
+
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
