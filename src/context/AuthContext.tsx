@@ -28,34 +28,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<{ id: string; username: string } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // プロフィール情報を取得する関数
-  const fetchProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, username')
-        .eq('id', userId)
-        .single()
-
-      if (error) {
-        console.error('プロフィール取得エラー:', error)
-        return null
-      }
-
-      return data
-    } catch (error) {
-      console.error('プロフィール取得中にエラーが発生しました:', error)
-      return null
-    }
-  }
-
   // プロフィールを更新する関数
   const refreshProfile = async () => {
     if (user) {
-      const profile = await fetchProfile(user.id)
-      if (profile) {
-        setProfile(profile)
-      }
+      // const profile = await fetchProfile(user.id)
+      // if (profile) {
+      //   setProfile(profile)
+      // }
     }
   }
 
@@ -83,12 +62,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (session) {
           setSession(session)
           setUser(session.user)
-
-          // プロフィール情報を取得
-          const profile = await fetchProfile(session.user.id)
-          if (profile) {
-            setProfile(profile)
-          }
         }
       } catch (error) {
         console.error('認証初期化中にエラーが発生しました:', error)
@@ -104,15 +77,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (event, session) => {
         setSession(session)
         setUser(session?.user ?? null)
-
-        if (session?.user) {
-          const profile = await fetchProfile(session.user.id)
-          if (profile) {
-            setProfile(profile)
-          }
-        } else {
-          setProfile(null)
-        }
       }
     )
 

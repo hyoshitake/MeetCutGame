@@ -1,0 +1,7 @@
+- Facebookでログイン、Googleでログイン、ゲストでログインした後にリダイレクトするページを用意して下さい
+  - URLは`/make_account`とします
+  - make_accountにはニックネームを入力するinputを設置します
+  - ニックネームの保存ボタンを設置します
+    - 保存ボタンをクリックするとSupabaseの`Profiles`を更新してください
+      - `src\utils\supabase.ts`の`updateUserProfile`を実行してください
+    - Profilesを更新するとゲームスタート画面に戻ります

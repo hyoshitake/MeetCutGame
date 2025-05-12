@@ -56,7 +56,7 @@ export default function AuthDialog({ isOpen, onClose, onAuthComplete }: AuthDial
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: window.location.origin + "/make_account",
         },
       })
       if (error) {
@@ -91,7 +91,7 @@ export default function AuthDialog({ isOpen, onClose, onAuthComplete }: AuthDial
       const { error } = await supabase.auth.signInWithOtp({
         email: guestEmail,
         options: {
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: window.location.origin + "/make_account",
         }
       })
 
