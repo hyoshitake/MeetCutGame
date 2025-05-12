@@ -6,6 +6,7 @@ import { faScissors } from '@fortawesome/free-solid-svg-icons'
 import { supabase } from '@/utils/supabase'
 import { useAuth } from '@/context/AuthContext'
 import AuthDialog from '@/components/AuthDialog'
+import Link from 'next/link'
 
 // お肉を描画するコンポーネント
 const BeefCanvas = ({
@@ -489,12 +490,16 @@ export default function Home() {
         <h1 className="text-4xl font-bold text-center mb-8">牛肉ぴったんこチャレンジ</h1>
 
         {gameState === 'waiting' && (
-          <button
-            className="px-6 py-3 text-lg bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300"
-            onClick={() => setGameState('playing')}
-          >
-            ゲームスタート
-          </button>
+          <div className="flex flex-col items-center gap-4">
+            <button
+              className="px-6 py-3 text-lg bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300"
+              onClick={() => setGameState('playing')}
+            >
+              ゲームスタート
+            </button>            <Link href="/ranking" className="px-6 py-3 text-lg bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">
+              ランキング
+            </Link>
+          </div>
         )}
 
         {gameState === 'playing' && (
