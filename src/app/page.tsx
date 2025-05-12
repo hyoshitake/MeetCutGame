@@ -11,7 +11,16 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // お肉を描画するコンポーネント
-const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameState: (state: string) => void }) => {  const canvasRef = useRef<HTMLCanvasElement>(null);
+const BeefCanvas = ({
+  gameState,
+  setGameState,
+  onGameResult
+}: {
+  gameState: string,
+  setGameState: (state: string) => void,
+  onGameResult?: (result: { resultWeight: number, leftRatio: number, rightRatio: number }) => void
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
   const [seekBarPosition, setSeekBarPosition] = useState(100);
   const directionRef = useRef<boolean>(true); // true: 右向き, false: 左向き
@@ -57,7 +66,6 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
       });
     }
   }, [gameState, resultWeight, leftMeatRatio, rightMeatRatio]);
-
   // カット後のアニメーションを監視
   useEffect(() => {
     if (cutAnimationProgress > 0 && cutAnimationProgress < 1) {
@@ -92,10 +100,22 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
           leftMeatRatio,
           rightMeatRatio
         });
-        setGameState('result');
+
+        // 親コンポーネントに結果を通知
+        if (onGameResult) {
+          onGameResult({
+            resultWeight,
+            leftRatio: leftMeatRatio,
+            rightRatio: rightMeatRatio
+          });
+        }
+        // 親から結果遷移の通知がない場合のフォールバック
+        else {
+          setGameState('result');
+        }
       }, 500);
     }
-  }, [cutAnimationProgress, isCutAnimationComplete, setGameState, resultWeight, leftMeatRatio, rightMeatRatio]);
+  }, [cutAnimationProgress, isCutAnimationComplete, setGameState, resultWeight, leftMeatRatio, rightMeatRatio, onGameResult]);
 
   // シークバーのアニメーションを開始（playingの場合のみ）
   useEffect(() => {
@@ -406,22 +426,22 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
         >
           <FontAwesomeIcon icon={faScissors} className="text-gray-700" size="lg" />
         </button>
-      )}
-
-      {gameState === 'result' && (
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center bg-white bg-opacity-80 p-4 rounded shadow-lg z-20">
-          <p className="text-xl font-bold">結果</p>
-          <p className="text-lg">小さい方の肉: {resultWeight}g</p>
-          <p className="text-md">分割比率: {Math.round(leftMeatRatio * 100)}% : {Math.round(rightMeatRatio * 100)}%</p>
-        </div>
-      )}
-      resultWeight: {resultWeight}
+      )}      {/* BeefCanvas内の結果表示は削除（親コンポーネントで表示するため） */}
+      {/* デバッグ用の情報表示（本番では不要であれば削除可能） */}
+      {gameState !== 'result' && <div className="text-xs text-gray-400">result: {resultWeight}g</div>}
     </div>
   );
 };
 
 export default function Home() {
   const [gameState, setGameState] = useState('waiting') // waiting, playing, result
+  const [gameResult, setGameResult] = useState({ resultWeight: 0, leftRatio: 0, rightRatio: 0 })
+
+  // BeefCanvasコンポーネントから結果を受け取る関数
+  const handleGameResult = (result: { resultWeight: number, leftRatio: number, rightRatio: number }) => {
+    setGameResult(result);
+    setGameState('result');
+  }
 
   return (
     <div className="flex justify-center items-center w-full">
@@ -441,7 +461,7 @@ export default function Home() {
           <div className="w-full mx-auto">
             <p className="text-center mb-4">肉をぴったり半分に切ろう！</p>
             <div className="flex justify-center">
-              <BeefCanvas gameState={gameState} setGameState={setGameState} />
+              <BeefCanvas gameState={gameState} setGameState={setGameState} onGameResult={handleGameResult} />
             </div>
           </div>
         )}
@@ -449,8 +469,12 @@ export default function Home() {
         {gameState === 'result' && (
           <div className="w-full max-w-lg text-center mx-auto">
             <p className="text-xl mb-4">結果発表</p>
-            <div className="flex justify-center">
-              <BeefCanvas gameState={gameState} setGameState={setGameState} />
+            <div className="relative w-full" style={{ width: '840px', maxWidth: '100%', height: '320px' }}>
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center bg-white bg-opacity-80 p-4 rounded shadow-lg z-20">
+                <p className="text-xl font-bold">結果</p>
+                <p className="text-lg">小さい方の肉: {gameResult.resultWeight}g</p>
+                <p className="text-md">分割比率: {Math.round(gameResult.leftRatio * 100)}% : {Math.round(gameResult.rightRatio * 100)}%</p>
+              </div>
             </div>
             <button
               className="px-6 py-3 text-lg bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300 mt-4"

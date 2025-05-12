@@ -1,0 +1,2 @@
+`src\app\page.tsx`の449行目の`gameState === 'result'`で画面が再描画されるため、お肉が再計算され、`resultWeight`が初期化されることが分かりました。
+`gameState === 'result'`でBeefCanvasを再描画せずに412行目から416行目の結果表示divのみ表示するように変更して下さい
