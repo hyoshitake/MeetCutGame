@@ -434,7 +434,7 @@ export default function Home() {
   const [gameResult, setGameResult] = useState({ resultWeight: 0, leftRatio: 0, rightRatio: 0 })
   const [showSaveDialog, setShowSaveDialog] = useState(false)
   const [showAuthDialog, setShowAuthDialog] = useState(false)
-  const { user, profile, refreshProfile } = useAuth()
+  const { user, profile, refreshProfile, signOut } = useAuth()
 
   // BeefCanvasコンポーネントから結果を受け取る関数
   const handleGameResult = (result: { resultWeight: number, leftRatio: number, rightRatio: number }) => {
@@ -496,9 +496,21 @@ export default function Home() {
               onClick={() => setGameState('playing')}
             >
               ゲームスタート
-            </button>            <Link href="/ranking" className="px-6 py-3 text-lg bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">
+            </button>
+            <Link href="/ranking" className="px-6 py-3 text-lg bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300">
               ランキング
             </Link>
+            {user && (
+              <button
+                className="px-6 py-3 text-lg bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition duration-300"
+                onClick={async () => {
+                  await signOut();
+                  alert('ログアウトしました');
+                }}
+              >
+                ログアウト
+              </button>
+            )}
           </div>
         )}
 
