@@ -1,0 +1,5 @@
+- `resultWeight`が設定されません。
+- `const weight = Math.round(smallerRatio * 1000 * 10) / 10;` でweightが計算されることは確認しました
+- `setResultWeight`が実行されますが、`resultWeight`に値が設定されません
+- 原因を確認して修正してください
+- debugする場合はDockerコンテナ上でnpmコマンドを叩いてください

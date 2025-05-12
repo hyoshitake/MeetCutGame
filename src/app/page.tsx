@@ -42,6 +42,22 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
     drawBeef(ctx, 640, canvas.height);
   }, []);
 
+  // resultWeightの変更を監視
+  useEffect(() => {
+    console.log('resultWeight変更を検知:', resultWeight);
+  }, [resultWeight]);
+
+  // gameStateの変更を監視
+  useEffect(() => {
+    if (gameState === 'result') {
+      console.log('結果画面表示時の値:', {
+        resultWeight,
+        leftMeatRatio,
+        rightMeatRatio
+      });
+    }
+  }, [gameState, resultWeight, leftMeatRatio, rightMeatRatio]);
+
   // カット後のアニメーションを監視
   useEffect(() => {
     if (cutAnimationProgress > 0 && cutAnimationProgress < 1) {
@@ -65,13 +81,21 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
 
       return () => cancelAnimationFrame(animationId);
     } else if (cutAnimationProgress >= 1 && !isCutAnimationComplete) {
+      // 完了状態を先に設定
       setIsCutAnimationComplete(true);
-      // アニメーション完了後、ゲーム状態を結果に変更
+
+      // アニメーション完了後、少し待ってから次の画面に遷移
+      // このタイミングでresultWeightの値が確実に反映されるようにする
       setTimeout(() => {
+        console.log('結果画面に遷移する前の最終値:', {
+          resultWeight,
+          leftMeatRatio,
+          rightMeatRatio
+        });
         setGameState('result');
       }, 500);
     }
-  }, [cutAnimationProgress, isCutAnimationComplete, setGameState]);
+  }, [cutAnimationProgress, isCutAnimationComplete, setGameState, resultWeight, leftMeatRatio, rightMeatRatio]);
 
   // シークバーのアニメーションを開始（playingの場合のみ）
   useEffect(() => {
@@ -204,24 +228,32 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const totalWidth = canvas.width;
-    const cutPos = seekBarPosition || 100;
+    const totalWidth = 640; // 元のキャンバス幅（余白除く）
+    const cutPos = (seekBarPosition || 100) - 100; // 100pxの左余白を考慮
 
-    // 左側と右側の肉の割合を計算
+    // 左側と右側の肉の割合を計算（調整済みの値で計算）
     const leftRatio = cutPos / totalWidth;
     const rightRatio = 1 - leftRatio;
 
-    setLeftMeatRatio(leftRatio);
-    setRightMeatRatio(rightRatio);
+    console.log('分割比率計算:', { cutPos, totalWidth, leftRatio, rightRatio });
 
     // 小さい方の割合を計算（1kgの肉を想定）
     const smallerRatio = Math.min(leftRatio, rightRatio);
     const weight = Math.round(smallerRatio * 1000 * 10) / 10; // 小数点第1位で四捨五入
+    console.log('重さ計算:', { smallerRatio, weight });
+
+    // すべてのステート更新を一度に行う
+    // これにより、Reactのバッチ更新メカニズムを活用して一貫性を保つ
+    setLeftMeatRatio(leftRatio);
+    setRightMeatRatio(rightRatio);
     setResultWeight(weight);
 
-    // 分割アニメーションを開始
-    setCutAnimationProgress(0.01);
-    setIsCutAnimationComplete(false);
+    // ステート更新が確実に行われた後に分割アニメーションを開始
+    // この遅延によりReactがステート更新をコミットする時間を確保
+    setTimeout(() => {
+      setCutAnimationProgress(0.01);
+      setIsCutAnimationComplete(false);
+    }, 0);
   };
 
   // お肉を描画する関数
@@ -376,7 +408,6 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
         </button>
       )}
 
-      {/* 結果の重さ表示 */}
       {gameState === 'result' && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center bg-white bg-opacity-80 p-4 rounded shadow-lg z-20">
           <p className="text-xl font-bold">結果</p>
@@ -384,6 +415,7 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
           <p className="text-md">分割比率: {Math.round(leftMeatRatio * 100)}% : {Math.round(rightMeatRatio * 100)}%</p>
         </div>
       )}
+      resultWeight: {resultWeight}
     </div>
   );
 };
