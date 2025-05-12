@@ -13,7 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey)
 // お肉を描画するコンポーネント
 const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameState: (state: string) => void }) => {  const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const [seekBarPosition, setSeekBarPosition] = useState(0);
+  const [seekBarPosition, setSeekBarPosition] = useState(100);
   const directionRef = useRef<boolean>(true); // true: 右向き, false: 左向き
   const [buttonFlash, setButtonFlash] = useState(false);
   const [leftMeatRatio, setLeftMeatRatio] = useState(0);
@@ -35,11 +35,11 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
     if (!ctx) return;
 
     // キャンバスのサイズ設定
-    canvas.width = 640;
+    canvas.width = 640 + 200; // 左右分割時の余白を考慮
     canvas.height = 320;
 
     // お肉を描画（一度だけ）
-    drawBeef(ctx, canvas.width, canvas.height);
+    drawBeef(ctx, 640, canvas.height);
   }, []);
 
   // カット後のアニメーションを監視
@@ -92,7 +92,7 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const width = canvas.width;
+    const width = 640; // シークバーの幅
 
     // フレームごとの移動量を計算 (1.5秒で片道)
     // 60fps を想定した場合、90フレームで片道になるようにする
@@ -110,15 +110,15 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
         if (directionRef.current) {
           // 右向きに移動
           newPosition += speed;
-          if (newPosition >= width) {
-            newPosition = width;
+          if (newPosition >= width + 100) {
+            newPosition = width + 100;
             directionRef.current = false; // 左向きに切り替え
           }
         } else {
           // 左向きに移動
           newPosition -= speed;
-          if (newPosition <= 0) {
-            newPosition = 0;
+          if (newPosition <= 100) {
+            newPosition = 100;
             directionRef.current = true; // 右向きに切り替え
           }
         }
@@ -167,7 +167,7 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
     // カットアニメーションフレーム
     const animateCut = () => {
       // 現在のシークバー位置でY座標を増加
-      const x = seekBarPosition || 0;
+      const x = seekBarPosition || 100;
       currentY += cutSpeed;
 
       // 軌跡を記録
@@ -205,7 +205,7 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
     if (!canvas) return;
 
     const totalWidth = canvas.width;
-    const cutPos = seekBarPosition || 0;
+    const cutPos = seekBarPosition || 100;
 
     // 左側と右側の肉の割合を計算
     const leftRatio = cutPos / totalWidth;
@@ -220,7 +220,7 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
     setResultWeight(weight);
 
     // 分割アニメーションを開始
-    setCutAnimationProgress(0);
+    setCutAnimationProgress(0.01);
     setIsCutAnimationComplete(false);
   };
 
@@ -235,8 +235,8 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
     ctx.beginPath();
 
     // 下線の開始点（左端）
-    const startX = 0; // canvasの左端
-    const endX = width; // canvasの右端
+    const startX = 100; // canvasの左端
+    const endX = width + 100; // canvasの右端
     const bottomY = height; // canvasの下端
 
     // 下線の左端から開始
@@ -290,7 +290,7 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
 
   // 分割されたお肉を描画する関数
   const drawSplitMeat = (ctx: CanvasRenderingContext2D, width: number, height: number, progress: number) => {
-    const cutPos = seekBarPosition || 0;
+    const cutPos = seekBarPosition || 100;
     const beefShape = beefShapeRef.current;
     const bottomY = height;
 
@@ -343,7 +343,7 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
   };
 
   return (
-    <div className="relative w-full" style={{ width: '640px', maxWidth: '100%' }}>
+    <div className="relative w-full" style={{ width: '840px', maxWidth: '100%' }}>
       {/* シークバー（円形）- canvasの上に配置 */}
       {gameState === 'playing' && (
         <div
@@ -360,7 +360,7 @@ const BeefCanvas = ({ gameState, setGameState }: { gameState: string, setGameSta
       <canvas
         ref={canvasRef}
         className="w-full h-64 mx-auto rounded"
-        style={{ width: '640px', height: '320px', maxWidth: '100%' }}
+        style={{ width: '840px', height: '320px', maxWidth: '100%' }}
       />
 
       {/* カットボタン */}
@@ -393,7 +393,7 @@ export default function Home() {
 
   return (
     <div className="flex justify-center items-center w-full">
-      <main className="flex min-h-screen flex-col items-center justify-center p-4" style={{ minWidth: '640px', maxWidth: '1200px', width: '100%' }}>
+      <main className="flex min-h-screen flex-col items-center justify-center p-4" style={{ minWidth: '840px', maxWidth: '1200px', width: '100%' }}>
         <h1 className="text-4xl font-bold text-center mb-8">牛肉ぴったんこチャレンジ</h1>
 
         {gameState === 'waiting' && (
