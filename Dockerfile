@@ -11,7 +11,7 @@ RUN npm install
 CMD ["npm", "run", "dev"]
 
 # ポート12300を公開
-EXPOSE 12300
+EXPOSE 3000
 
 # 開発環境用
 FROM node:22-alpine AS development
@@ -26,4 +26,4 @@ ENV NODE_ENV=development
 CMD ["npm", "run", "dev"]
 
 # ポート12300を公開
-EXPOSE 12300
+EXPOSE 3000
