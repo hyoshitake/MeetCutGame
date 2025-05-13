@@ -2,16 +2,14 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# パッケージ管理ファイルをコピー
-COPY package*.json /app
-
+COPY . /app
+RUN ls /app
 # 開発依存関係をインストール
 RUN npm install
 
 # 本番環境用のビルド
 FROM node:22-alpine AS production
 WORKDIR /app
-COPY . /app
 RUN npm run build
 
 # 開発環境用
