@@ -8,7 +8,7 @@ COPY . .
 # 開発依存関係をインストール
 RUN npm install
 
-RUN npm run dev
+CMD ["npm", "run", "dev"]
 
 # ポート12300を公開
 EXPOSE 12300
